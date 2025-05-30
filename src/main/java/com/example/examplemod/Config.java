@@ -28,12 +28,24 @@ public class Config
             .comment("数据库密码（当使用数据库存储时）。修改此项后，强烈建议重启服务器以确保连接完全生效。")
             .define("databasePassword", "");
 
+    // 新增配置项：是否禁止未登录玩家移动
+    public static final ForgeConfigSpec.BooleanValue RESTRICT_MOVEMENT = BUILDER
+            .comment("是否禁止未登录玩家移动。")
+            .define("restrictMovement", true); // 默认为 true
+
+    // 新增配置项：是否对未登录玩家施加失明效果
+    public static final ForgeConfigSpec.BooleanValue APPLY_BLINDNESS = BUILDER
+            .comment("是否对未登录玩家施加失明效果。")
+            .define("applyBlindness", true); // 默认为 true
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     private static StorageType storageType;
     private static String databaseUrl;
     private static String databaseUsername;
     private static String databasePassword;
+    private static boolean restrictMovement; // 新增私有变量
+    private static boolean applyBlindness; // 新增私有变量
 
     public enum StorageType {
         FILE,
@@ -58,6 +70,8 @@ public class Config
         databaseUrl = DATABASE_URL.get();
         databaseUsername = DATABASE_USERNAME.get();
         databasePassword = DATABASE_PASSWORD.get();
+        restrictMovement = RESTRICT_MOVEMENT.get(); // 加载新配置
+        applyBlindness = APPLY_BLINDNESS.get(); // 加载新配置
     }
 
     public static void reload()
@@ -107,5 +121,31 @@ public class Config
     {
         DATABASE_PASSWORD.set(password);
         databasePassword = password;
+    }
+
+    // 新增 getter 方法
+    public static boolean shouldRestrictMovement()
+    {
+        return restrictMovement;
+    }
+
+    // 新增 setter 方法
+    public static void setRestrictMovement(boolean value)
+    {
+        RESTRICT_MOVEMENT.set(value);
+        restrictMovement = value;
+    }
+
+    // 新增 getter 方法
+    public static boolean shouldApplyBlindness()
+    {
+        return applyBlindness;
+    }
+
+    // 新增 setter 方法
+    public static void setApplyBlindness(boolean value)
+    {
+        APPLY_BLINDNESS.set(value);
+        applyBlindness = value;
     }
 }

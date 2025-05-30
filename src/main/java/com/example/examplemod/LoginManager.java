@@ -7,6 +7,7 @@ import com.example.examplemod.storage.UserStorage;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import com.example.examplemod.events.LoginEventHandler;
+import net.minecraft.world.effect.MobEffects;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -20,11 +21,14 @@ public class LoginManager {
     private final Map<UUID, Long> loginAttempts;
     private static final long LOGIN_TIMEOUT = 300000; // 5分钟超时
     private Map<UUID, Boolean> loggedInPlayers;
+    private final Map<UUID, Long> lastMoveWarningTime;
+    private static final long MOVE_WARNING_COOLDOWN = 5000; // 移动警告冷却时间 (毫秒)
 
     private LoginManager() {
         initializeStorage();
         loginAttempts = new HashMap<>();
         loggedInPlayers = new HashMap<>();
+        lastMoveWarningTime = new HashMap<>();
     }
 
     private void initializeStorage() {
@@ -55,6 +59,10 @@ public class LoginManager {
         return instance;
     }
 
+    public Optional<User> getUser(UUID uuid) {
+        return storage.getUser(uuid);
+    }
+
     public boolean register(ServerPlayer player, String password) {
         UUID uuid = player.getUUID();
         String username = player.getGameProfile().getName();
@@ -72,6 +80,9 @@ public class LoginManager {
         User user = new User(uuid, username, password);
         storage.saveUser(user);
         player.sendSystemMessage(Component.literal("§a注册成功！"));
+
+        login(player, password);
+
         return true;
     }
 
@@ -98,6 +109,11 @@ public class LoginManager {
         user.setLoggedIn(true);
         storage.updateUser(user);
         player.sendSystemMessage(Component.literal("§a登录成功！"));
+
+        player.removeEffect(MobEffects.BLINDNESS);
+
+        lastMoveWarningTime.remove(uuid);
+
         return true;
     }
 
@@ -120,5 +136,15 @@ public class LoginManager {
 
     public void shutdown() {
         storage.shutdown();
+    }
+
+    public boolean canSendMoveWarning(UUID playerId) {
+        long currentTime = System.currentTimeMillis();
+        Long lastWarning = lastMoveWarningTime.get(playerId);
+        if (lastWarning == null || currentTime - lastWarning >= MOVE_WARNING_COOLDOWN) {
+            lastMoveWarningTime.put(playerId, currentTime);
+            return true;
+        }
+        return false;
     }
 } 

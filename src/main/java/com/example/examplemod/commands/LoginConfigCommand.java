@@ -3,6 +3,7 @@ package com.example.examplemod.commands;
 import com.example.examplemod.Config;
 import com.example.examplemod.LoginManager;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -28,7 +29,18 @@ public class LoginConfigCommand {
                     context.getSource().sendSuccess(() -> Component.literal("§a配置已重载！"), true);
                     return 1;
                 }))
-            .then(Commands.literal("set")
+            .then(Commands.literal("get") // 查看当前配置
+                .executes(context -> {
+                    context.getSource().sendSuccess(() -> Component.literal("§6===== 当前登录模组配置 =====\n" +
+                            "§e存储方式: §f" + Config.getStorageType() + "\n" +
+                            "§e数据库URL: §f" + Config.getDatabaseUrl() + "\n" +
+                            "§e数据库用户名: §f" + Config.getDatabaseUsername() + "\n" +
+                            "§e数据库密码: §f" + (Config.getDatabasePassword().isEmpty() ? "未设置" : "已设置") + "\n" +
+                            "§e禁止未登录玩家移动: §f" + Config.shouldRestrictMovement() + "\n" + // 显示新配置
+                            "§e对未登录玩家施加失明效果: §f" + Config.shouldApplyBlindness()), false); // 显示新配置
+                    return 1;
+                }))
+            .then(Commands.literal("set") // 设置配置
                 .then(Commands.literal("storage")
                     .then(Commands.argument("type", StringArgumentType.word())
                         .executes(context -> {
@@ -70,16 +82,24 @@ public class LoginConfigCommand {
                                 LoginManager.getInstance().reloadStorage();
                                 context.getSource().sendSuccess(() -> Component.literal("§a数据库密码已更新！"), true);
                                 return 1;
-                            })))))
-            .then(Commands.literal("get")
-                .executes(context -> {
-                    context.getSource().sendSuccess(() -> Component.literal("§6当前配置：\n" +
-                            "§e存储方式: §f" + Config.getStorageType() + "\n" +
-                            "§e数据库URL: §f" + Config.getDatabaseUrl() + "\n" +
-                            "§e数据库用户名: §f" + Config.getDatabaseUsername() + "\n" +
-                            "§e数据库密码: §f" + (Config.getDatabasePassword().isEmpty() ? "未设置" : "已设置")), false);
-                    return 1;
-                })));
+                            }))))
+                .then(Commands.literal("restrictMovement") // 新增设置移动限制的子命令
+                    .then(Commands.argument("value", BoolArgumentType.bool())
+                        .executes(context -> {
+                            boolean value = BoolArgumentType.getBool(context, "value");
+                            Config.setRestrictMovement(value);
+                            context.getSource().sendSuccess(() -> Component.literal("§a禁止未登录玩家移动设置已更新为: " + value), true);
+                            return 1;
+                        })))
+                .then(Commands.literal("applyBlindness") // 新增设置失明效果的子命令
+                    .then(Commands.argument("value", BoolArgumentType.bool())
+                        .executes(context -> {
+                            boolean value = BoolArgumentType.getBool(context, "value");
+                            Config.setApplyBlindness(value);
+                            context.getSource().sendSuccess(() -> Component.literal("§a对未登录玩家施加失明效果设置已更新为: " + value), true);
+                            return 1;
+                        }))))
+        );
     }
 
     private static void sendHelp(CommandSourceStack source) {
@@ -91,6 +111,8 @@ public class LoginConfigCommand {
                 "§e/loginconfig set database url <url> §f- 设置数据库URL\n" +
                 "§e/loginconfig set database username <username> §f- 设置数据库用户名\n" +
                 "§e/loginconfig set database password <password> §f- 设置数据库密码\n" +
+                "§e/loginconfig set restrictMovement <true|false> §f- 设置是否禁止未登录玩家移动\n" + // 更新帮助信息
+                "§e/loginconfig set applyBlindness <true|false> §f- 设置是否对未登录玩家施加失明效果\n" + // 更新帮助信息
                 "§6================================\n" +
                 "§c注意：修改存储方式或数据库连接信息后，强烈建议重启服务器以确保配置完全生效！"), false);
     }
