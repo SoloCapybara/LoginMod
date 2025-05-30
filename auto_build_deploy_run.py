@@ -4,6 +4,7 @@ import shutil
 import configparser
 import glob
 import time
+# import requests # 移除 requests 库
 
 # --- 配置区域 ---
 # 模组项目根目录 (脚本将放置在此目录下)
@@ -17,6 +18,9 @@ SERVER_MODS_DIR = r"C:\Users\邓旭东\Desktop\新建文件夹\minecraft_server\
 
 # 服务器启动脚本路径
 SERVER_RUN_SCRIPT = os.path.join(SERVER_ROOT, "run.bat")
+
+# 预期的本地 MySQL JDBC Mod 文件名 (根据用户提供的截图和放置位置)
+LOCAL_MYSQL_JDBC_MOD_FILENAME = "mysql-jdbc-8.0.33+20230506-all.jar"
 # --- 配置区域结束 ---
 
 def run_command(command, cwd):
@@ -161,7 +165,33 @@ def main():
         print("清理旧模组文件失败，退出程序")
         return
 
-    print("\n[步骤 4] 复制新模组文件")
+    print("\n[步骤 4] 检查并部署 MySQL JDBC JAR")
+    local_mysql_jdbc_mod_path = os.path.join(MOD_PROJECT_ROOT, LOCAL_MYSQL_JDBC_MOD_FILENAME)
+    destination_mysql_jdbc_mod_path = os.path.join(SERVER_MODS_DIR, LOCAL_MYSQL_JDBC_MOD_FILENAME)
+
+    if os.path.exists(local_mysql_jdbc_mod_path):
+        print(f"在模组项目根目录找到本地 MySQL JDBC JAR: {LOCAL_MYSQL_JDBC_MOD_FILENAME}")
+        try:
+            # 检查目标位置是否已经存在同名文件，如果存在则删除
+            if os.path.exists(destination_mysql_jdbc_mod_path):
+                print(f"目标 mods 目录已存在同名文件，正在删除: {LOCAL_MYSQL_JDBC_MOD_FILENAME}")
+                os.unlink(destination_mysql_jdbc_mod_path)
+                
+            shutil.copy2(local_mysql_jdbc_mod_path, destination_mysql_jdbc_mod_path)
+            print(f"成功复制 {LOCAL_MYSQL_JDBC_MOD_FILENAME} 到 {SERVER_MODS_DIR}")
+        except FileNotFoundError:
+            print(f"错误: 找不到目标服务器模组目录: {SERVER_MODS_DIR}")
+            return # 无法复制则退出
+        except Exception as e:
+            print(f"复制文件时出错: {e}")
+            return # 复制失败则退出
+    else:
+        print(f"未在模组项目根目录找到预期的本地 MySQL JDBC JAR 文件: {LOCAL_MYSQL_JDBC_MOD_FILENAME}")
+        print("请将下载的 MySQL JDBC JAR 文件放置在模组项目根目录，并确保文件名为 {LOCAL_MYSQL_JDBC_MOD_FILENAME}。")
+        # 在没有找到本地文件的情况下，停止后续部署以避免运行时错误
+        return
+
+    print("\n[步骤 5] 复制新模组文件")
     build_dir = os.path.join(MOD_PROJECT_ROOT, "build")
     source_jar_path = find_mod_jar(build_dir, mod_id)
     
@@ -183,7 +213,7 @@ def main():
         return
 
     print("\n=== 自动化流程完成 ===")
-    print("模组已成功部署到服务器目录，您可以手动启动服务器了")
+    print("模组和依赖已成功部署到服务器目录，您可以手动启动服务器了")
 
 if __name__ == "__main__":
     # 检查所需的路径是否存在

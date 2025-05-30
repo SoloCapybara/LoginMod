@@ -230,6 +230,7 @@ tasks.withType(JavaCompile).configureEach {
 // 将 shadowJar 的大部分配置移入 afterEvaluate 块
 project.afterEvaluate {
     tasks.named('shadowJar').configure {
+        enabled = false // Temporarily disable shadowJar
         // Set the output jar name
         archiveClassifier = '' // 移除默认的 '-all' 后缀
         archiveBaseName = "${mod_id}-${minecraft_version}" // 设置基础文件名
@@ -238,44 +239,47 @@ project.afterEvaluate {
         // 明确声明 shadowJar 依赖于 reobfJar 任务
         dependsOn tasks.named('reobfJar')
         
-        // 使用 reobfJar 的输出文件作为输入
-        // from tasks.named('reobfJar').map { it.archiveFile }
-        from tasks.named('reobfJar')
+        // Using reobfJar output as input
+        // from tasks.named('reobfJar')
 
-        // 包含运行时classpath中的所有依赖（用于合并依赖）
-        configurations = [project.configurations.runtimeClasspath]
+        // Explicitly include mod classes and runtime classpath
+        from sourceSets.main.output
+        from project.configurations.runtimeClasspath
 
         // 重定位冲突的包 (如果需要)
-        relocate 'io.netty', 'shaded.io.netty' // 如果 Netty 冲突再次出现且排除无效，可以启用此行
+        // relocate 'io.netty', 'shaded.io.netty' // 如果 Netty 冲突再次出现且排除无效，可以启用此行
 
         // 排除其他已知冲突包
-        exclude 'META-INF/*.RSA'
-        exclude 'META-INF/*.SF'
-        exclude 'META-INF/*.DSA'
-        exclude 'META-INF/MANIFEST.MF'
-        exclude 'META-INF/versions/9/module-info.class'
-        exclude 'module-info.class'
-        exclude 'net/minecraftforge/jarjar/**' // Forge JarJar 工具
-        exclude 'org/objectweb/asm/**' // ASM
-        exclude 'joptsample/**' // joptsimple
-        exclude 'net/jodah.typetools/**' // typetools (注意这里的点)
-        exclude 'com/sun/jna/**' // JNA
-        exclude 'com/sun/jna/win32/**' // JNA Win32
-        exclude 'com/mojang/logging/**' // Mojang logging
-        exclude 'org/apache/commons/io/**' // Apache Commons IO
-        exclude 'com/mojang/datafixers/**' // Mojang DataFixerUpper
-        exclude 'com/mojang/serialization/**' // Mojang serialization
-        exclude 'io/netty/**' // Netty
-        exclude 'io/netty/util/internal/**' // 排除 io.netty.util.internal
-        exclude 'it/unimi.dsi.fastutil/**' // FastUtil
-        exclude 'org/apache/logging/log4j/**' // Log4j 2
-        exclude 'org/apache/logging/log4j/util/**' // Log4j 2 util 包具体排除
-        exclude 'org/jline/**' // JLine
-        exclude 'com/google/common/**' // Guava
+        // exclude 'META-INF/*.RSA'
+        // exclude 'META-INF/*.SF'
+        // exclude 'META-INF/*.DSA'
+        // exclude 'META-INF/MANIFEST.MF'
+        // exclude 'META-INF/versions/9/module-info.class'
+        // exclude 'module-info.class'
+        // exclude 'net/minecraftforge/jarjar/**' // Forge JarJar 工具
+        // exclude 'org/objectweb/asm/**' // ASM
+        // exclude 'joptsample/**' // joptsimple
+        // exclude 'net/jodah.typetools/**' // typetools (注意这里的点)
+        // exclude 'com/sun/jna/**' // JNA
+        // exclude 'com/sun/jna/win32/**' // JNA Win32
+        // exclude 'com/mojang/logging/**' // Mojang logging
+        // exclude 'org/apache/commons/io/**' // Apache Commons IO
+        // exclude 'com/mojang/datafixers/**' // Mojang DataFixerUpper
+        // exclude 'com/mojang/serialization/**' // Mojang serialization
+        // exclude 'io/netty/**' // Netty
+        // exclude 'io/netty/util/internal/**' // 排除 io.netty.util.internal
+        // exclude 'it/unimi.dsi.fastutil/**' // FastUtil
+        // exclude 'org/apache/logging/log4j/**' // Log4j 2
+        // exclude 'org/apache/logging/log4j/util/**' // Log4j 2 util 包具体排除
+        // exclude 'org/jline/**' // JLine
+        // exclude 'com/google/common/**' // Guava
 
         // 如果 MySQL 驱动本身包含冲突包，这里会排除它们
 
         // 确保不重定位或排除模组自身的类
         // include 'com/your_mod_id/**' // 根据你的实际包名调整
+
+        // Ensure MySQL driver is included
+        include 'com/mysql/**'
     }
 }
