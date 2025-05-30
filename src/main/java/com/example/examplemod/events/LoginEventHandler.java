@@ -136,7 +136,7 @@ public class LoginEventHandler {
 
                         // 根据配置禁止移动 (在 PlayerTickEvent 中检查移动速度并归零)
                         if (Config.shouldRestrictMovement()) {
-                             // 检查玩家是否有显著的水平移动速度
+                             // 检查玩家是否有显著的水平移动速度，并直接归零
                              if (serverPlayer.getDeltaMovement().horizontalDistanceSqr() > 1.0E-6) { // 检查水平移动
                                  serverPlayer.setDeltaMovement(0, serverPlayer.getDeltaMovement().y, 0); // 只保留 Y 轴移动 (跳跃/下落)
                                  // 使用冷却机制发送警告
