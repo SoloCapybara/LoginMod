@@ -66,5 +66,22 @@ public class LoginCommand {
                 LoginManager.getInstance().logout(player);
                 return 1;
             }));
+
+        // Add help command
+        dispatcher.register(Commands.literal("login")
+            .then(Commands.literal("help")
+                .executes(context -> {
+                    if (!(context.getSource().getEntity() instanceof ServerPlayer player)) {
+                        context.getSource().sendFailure(Component.literal("§c该命令只能由玩家执行！"));
+                        return 0;
+                    }
+                    player.sendSystemMessage(Component.literal("§a§l--- 登录/注册帮助 ---"));
+                    player.sendSystemMessage(Component.literal("§e/register <密码> <确认密码> §f- 注册账号"));
+                    player.sendSystemMessage(Component.literal("§e/login <密码> §f- 登录账号"));
+                    player.sendSystemMessage(Component.literal("§e/logout §f- 登出当前账号"));
+                    player.sendSystemMessage(Component.literal("§a§l---------------------"));
+                    return 1;
+                }))
+        );
     }
 } 

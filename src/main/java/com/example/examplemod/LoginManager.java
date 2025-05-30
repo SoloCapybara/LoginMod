@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import com.example.examplemod.events.LoginEventHandler;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.phys.Vec3;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -23,12 +24,14 @@ public class LoginManager {
     private Map<UUID, Boolean> loggedInPlayers;
     private final Map<UUID, Long> lastMoveWarningTime;
     private static final long MOVE_WARNING_COOLDOWN = 5000; // 移动警告冷却时间 (毫秒)
+    private final Map<UUID, Vec3> initialPositions; // 存储玩家初始位置
 
     private LoginManager() {
         initializeStorage();
         loginAttempts = new HashMap<>();
         loggedInPlayers = new HashMap<>();
         lastMoveWarningTime = new HashMap<>();
+        initialPositions = new HashMap<>();
     }
 
     private void initializeStorage() {
@@ -114,6 +117,9 @@ public class LoginManager {
 
         lastMoveWarningTime.remove(uuid);
 
+        // 登录成功后移除初始位置记录
+        removeInitialPosition(uuid);
+
         return true;
     }
 
@@ -127,6 +133,9 @@ public class LoginManager {
             storage.updateUser(user);
             player.sendSystemMessage(Component.literal("§a已退出登录！"));
         }
+
+        // 登出时移除初始位置记录
+        removeInitialPosition(uuid);
     }
 
     public boolean isLoggedIn(ServerPlayer player) {
@@ -147,4 +156,20 @@ public class LoginManager {
         }
         return false;
     }
+
+    // --- 玩家初始位置管理方法 ---
+    public void setInitialPosition(UUID playerId, Vec3 pos) {
+        initialPositions.put(playerId, pos);
+        System.out.println("LoginMod Debug: Set initial position for " + playerId + " to " + pos);
+    }
+
+    public Optional<Vec3> getInitialPosition(UUID playerId) {
+        return Optional.ofNullable(initialPositions.get(playerId));
+    }
+
+    public void removeInitialPosition(UUID playerId) {
+        initialPositions.remove(playerId);
+        System.out.println("LoginMod Debug: Removed initial position for " + playerId);
+    }
+    // --- 玩家初始位置管理方法结束 ---
 } 
